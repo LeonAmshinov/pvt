@@ -15,8 +15,8 @@ def init_ki(P, T, zi, Pci, Tci, wi, level=0, pure_ind=0, pure_eps=1e-3):
         cbrtki = np.cbrt(ki)
         return ki, 1/ki, ki_pure, cbrtki, 1/cbrtki
 
-def stability_newton(P, T, zi, Pci, Tci, wi, mwi, vsi, dij, c=1, eps1=1e-10, eps2=1e-8, maxiter=50, level=0, pure_ind=0, pure_eps=1e-3):
-    lnphi, Z = lnphi_Z(zi, P, T, Pci, Tci, wi, dij, vsi, c=c)
+def stability_newton(P, T, zi, Pci, Tci, wi, vsi, dij, c=1, eps1=1e-10, eps2=1e-8, maxiter=50, level=0, pure_ind=0, pure_eps=1e-3):
+    lnphi, Z = lnphi_Z(zi, P, T, Pci, Tci, wi, dij, vsi, c)
     Kji = init_ki(P, T, zi, Pci, Tci, wi, level, pure_ind, pure_eps)
     hi = lnphi + np.log(zi)
     # for j in range(len(Kji)):
@@ -26,7 +26,7 @@ def stability_newton(P, T, zi, Pci, Tci, wi, mwi, vsi, dij, c=1, eps1=1e-10, eps
         sqrtYi = np.sqrt(Yi)
         alphai = 2 * sqrtYi
         yi = Yi / np.sum(Yi)
-        lnphii, dlnphiidYj = lnphii_dnj(yi, np.sum(Yi), P, T, Pci, Tci, wi, dij, vsi, c=c)
+        lnphii, dlnphiidYj = lnphii_dnj(yi, np.sum(Yi), P, T, Pci, Tci, wi, dij, vsi, c)
         gpi = np.log(Yi) + lnphii - hi
         gi = sqrtYi * gpi
         gnorm = np.linalg.norm(gi)
@@ -38,7 +38,7 @@ def stability_newton(P, T, zi, Pci, Tci, wi, mwi, vsi, dij, c=1, eps1=1e-10, eps
             sqrtYi = alphai * .5
             Yi = sqrtYi * sqrtYi
             yi = Yi / np.sum(Yi)
-            lnphii, dlnphiidYj = lnphii_dnj(yi, np.sum(Yi), P, T, Pci, Tci, wi, dij, vsi, c=c)
+            lnphii, dlnphiidYj = lnphii_dnj(yi, np.sum(Yi), P, T, Pci, Tci, wi, dij, vsi, c)
             gpi = np.log(Yi) + lnphii - hi
             gi = sqrtYi * gpi
             gnorm = np.linalg.norm(gi)
@@ -59,8 +59,8 @@ def stability_newton(P, T, zi, Pci, Tci, wi, mwi, vsi, dij, c=1, eps1=1e-10, eps
     kvi = yi / zi
     return is_stable, (kvi, 1 / kvi)
 
-def stability_succesive_substitution(P, T, zi, Pci, Tci, wi, mwi, vsi, dij, c=1, eps1=1e-10, eps2=1e-8, maxiter=500, level=0, pure_ind=0, pure_eps=1e-3):
-    lnphi, Z = lnphi_Z(zi, P, T, Pci, Tci, wi, dij, vsi, c=c)
+def stability_succesive_substitution(P, T, zi, Pci, Tci, wi, vsi, dij, c=1, eps1=1e-10, eps2=1e-8, maxiter=500, level=0, pure_ind=0, pure_eps=1e-3):
+    lnphi, Z = lnphi_Z(zi, P, T, Pci, Tci, wi, dij, vsi, c)
     Kji = init_ki(P, T, zi, Pci, Tci, wi, level, pure_ind, pure_eps)
     hi = lnphi + np.log(zi)
     # for j in range(len(Kji)):
@@ -68,16 +68,16 @@ def stability_succesive_substitution(P, T, zi, Pci, Tci, wi, mwi, vsi, dij, c=1,
     for j, ki in enumerate(Kji):
         Yi = ki * zi
         yi = Yi / np.sum(Yi)
-        gi = np.log(Yi) + lnphi_Z(yi, P, T, Pci, Tci, wi, dij, vsi, c=1)[0] - hi
+        gi = np.log(Yi) + lnphi_Z(yi, P, T, Pci, Tci, wi, dij, vsi, c)[0] - hi
         gnorm = np.linalg.norm(gi)
-        c = 0
+        k = 0
         while gnorm > eps1 and c < maxiter:
             ki = ki * np.exp(-gi)
             Yi = ki * zi
             yi = Yi / np.sum(Yi)
-            gi = np.log(Yi) + lnphi_Z(yi, P, T, Pci, Tci, wi, dij, vsi, c=1)[0] - hi
+            gi = np.log(Yi) + lnphi_Z(yi, P, T, Pci, Tci, wi, dij, vsi, c)[0] - hi
             gnorm = np.linalg.norm(gi)
-            c += 1
+            k += 1
         TPD = - np.log(np.sum(Yi))
         print(f'For the initial guess #{j}:\n'
               f'\ttolerance of equations: {gnorm}\n'

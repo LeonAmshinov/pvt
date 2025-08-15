@@ -22,9 +22,9 @@ def R_R_2p(yi, kvi, eps=1e-10, maxiter=50):
     di = (ci[0] - ci) / (ci[-1] - ci[0])
     k = 0
     ak = yi[0] / yi[-1]
-    print(head % ('Nit', 'a', 'D(a)', 'method'))
+    # print(head % ('Nit', 'a', 'D(a)', 'method'))
     Dk, dDdak = D_value_deriv(ak, yi, di)
-    print(tmpl % (k, ak, Dk, 'D'))
+    # print(tmpl % (k, ak, Dk, 'D'))
     while np.abs(Dk) > eps and k < maxiter:
         h = Dk / dDdak
         akm1 = ak
@@ -39,9 +39,9 @@ def R_R_2p(yi, kvi, eps=1e-10, maxiter=50):
                 method = 'H'
         Dk, dDdak = D_value_deriv(ak, yi, di)
         k += 1
-        print(tmpl % (k, ak, Dk, method))
-    f = (ak * ci[-1] + ci[0]) / (1 + ak)
-    print('f = %.3f' % f)
+        # print(tmpl % (k, ak, Dk, method))
+    f = (ak * ci[-1] + ci[0]) / (1 + ak) #мольная доля нереференсной фазы
+    # print('f = %.3f' % f)
     return f
 
 def R_R_mp(yi, Kji, fjk, eps=1e-6, maxiter=30, eps_linesearch=1e-5, maxiter_linesearch=10):
@@ -51,7 +51,7 @@ def R_R_mp(yi, Kji, fjk, eps=1e-6, maxiter=30, eps_linesearch=1e-5, maxiter_line
         headphases.append('f' + str(i))
         # headphases.append('f%i' % i)
     head = ('%3s %5s' + Nphasem1 * '%9s' + '%10s%9s%9s') % ('Nit', 'Nls', *headphases, 'gnorm', 'lmbd', 'dFdlmbd')
-    print(head)
+    # print(head)
     tmpl = '%3i %5i' + Nphasem1 * '%9.5f' + '%10.2e%9.5f%9.5f'
 
     sqrtyi = np.sqrt(yi)
@@ -64,7 +64,7 @@ def R_R_mp(yi, Kji, fjk, eps=1e-6, maxiter=30, eps_linesearch=1e-5, maxiter_line
     n = 0
     lmbdn = 1
     dFdlmbd = 1
-    print(tmpl % (k, n, *fjk, gnorm, lmbdn, dFdlmbd))
+    # print(tmpl % (k, n, *fjk, gnorm, lmbdn, dFdlmbd))
     while gnorm > eps and k < maxiter:
         Pji = Aji * (sqrtyi / ti)
         Hjl = Pji.dot(Pji.T)
@@ -82,7 +82,7 @@ def R_R_mp(yi, Kji, fjk, eps=1e-6, maxiter=30, eps_linesearch=1e-5, maxiter_line
             dFdlmbd = dFdfj.dot(dfj)
             poluslmbdi = (1 - fjk.dot(Aji)) / tempi
             poluslmbd = np.min(poluslmbdi[where])
-            print(tmpl % (k, n, *fjkp1, gnorm, lmbdn, dFdlmbd))
+            # print(tmpl % (k, n, *fjkp1, gnorm, lmbdn, dFdlmbd))
             while np.abs(dFdlmbd) > eps_linesearch and n < maxiter_linesearch:
                 Pji = Aji * (sqrtyi / ti)
                 Hjl = Pji.dot(Pji.T)
@@ -90,10 +90,10 @@ def R_R_mp(yi, Kji, fjk, eps=1e-6, maxiter=30, eps_linesearch=1e-5, maxiter_line
                 lmbdnp1 = lmbdn - dFdlmbd / d2Fdlmbd2
                 if lmbdnp1 > poluslmbd:
                     lmbdn = (poluslmbd + lmbdn) * .5
-                    print('bisection: lmbdn > poluslmbd')
+                    # print('bisection: lmbdn > poluslmbd')
                 elif lmbdnp1 < 0:
                     lmbdn *= .5
-                    print('bisection: lmbdn < 0')
+                    # print('bisection: lmbdn < 0')
                 else:
                     lmbdn = lmbdnp1
                 n += 1
@@ -102,7 +102,7 @@ def R_R_mp(yi, Kji, fjk, eps=1e-6, maxiter=30, eps_linesearch=1e-5, maxiter_line
                 dFdfj = Aji.dot(yi / ti)
                 gnorm = np.linalg.norm(dFdfj)
                 dFdlmbd = dFdfj.dot(dfj)
-                print(tmpl % (k, n, *fjkp1, gnorm, lmbdn, dFdlmbd))
+                # print(tmpl % (k, n, *fjkp1, gnorm, lmbdn, dFdlmbd))
             fjk = fjkp1
             n = 0
         else:
@@ -113,5 +113,5 @@ def R_R_mp(yi, Kji, fjk, eps=1e-6, maxiter=30, eps_linesearch=1e-5, maxiter_line
             gnorm = np.linalg.norm(dFdfj)
             lmbdn = 1
         k += 1
-        print(tmpl % (k, n, *fjk, gnorm, lmbdn, dFdlmbd))
+        # print(tmpl % (k, n, *fjk, gnorm, lmbdn, dFdlmbd))
     return fjk
