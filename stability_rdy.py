@@ -93,7 +93,7 @@ def stability_succesive_substitution(P, T, zi, Pci, Tci, wi, dij, vsi, c=1, eps1
     kvi = yi / zi
     return is_stable, (kvi, 1/kvi), Z
 
-def stability_newton_after_ss(P, T, zi, ki, Z, hi, Pci, Tci, wi, dij, vsi, c=1, eps1=1e-20, eps2=1e-8, maxiter=50):
+def stability_newton_after_ss(P, T, zi, ki, Z, hi, Pci, Tci, wi, dij, vsi, k, c=1, eps1=1e-20, eps2=1e-8, maxiter=50):
     # lnphi, Z = lnphi_Z(zi, P, T, Pci, Tci, wi, dij, vsi, c)
     # hi = lnphi + np.log(zi)
     Yi = ki * zi
@@ -104,8 +104,8 @@ def stability_newton_after_ss(P, T, zi, ki, Z, hi, Pci, Tci, wi, dij, vsi, c=1, 
     gpi = np.log(Yi) + lnphii - hi
     gi = sqrtYi * gpi
     g2 = gpi.dot(gpi)
-    k = 0
-    print(f'\tmethod = Newton, {k = }, {g2 = :.2e}, lnki = {np.log(Yi/zi)}')
+    k += 1
+    # print(f'\tmethod = Newton, {k = }, {g2 = :.2e}, lnki = {np.log(Yi/zi)}')
     while g2 > eps1 and k < maxiter:
         Hij = np.diagflat(gpi * .5 + 1) + (sqrtYi * sqrtYi[:, None]) * dlnphiidYj
         dalphai = - np.linalg.solve(Hij, gi)
@@ -118,20 +118,10 @@ def stability_newton_after_ss(P, T, zi, ki, Z, hi, Pci, Tci, wi, dij, vsi, c=1, 
         gi = sqrtYi * gpi
         g2 = gpi.dot(gpi)
         k += 1
-        print(f'\tmethod = Newton, {k = }, {g2 = :.2e}, lnki = {np.log(Yi/zi)}')
-    TPD = - np.log(np.sum(Yi))
-    # print(f'\ttolerance of equations: {gnorm}\n'
-    #       f'\tnumber of iterations: {k+1}\n'
-    #       f'\tTPD: {TPD}\n'
-    #       f'\tlnki = {np.log(Yi/zi)}')
-    print(f'{TPD = :.3e}')
-    if g2 < eps1 and TPD < -eps2:
-        is_stable = False
-    else:
-        is_stable = True
-    print(f'The one phase state is stable: {is_stable}')
+        # print(f'\tmethod = Newton, {k = }, {g2 = :.2e}, lnki = {np.log(Yi / zi)}')
     kvi = yi / zi
-    return is_stable, (kvi, 1 / kvi), Z
+    return g2, Yi, (kvi,), Z
+
 
 def stability_ss_newton(P, T, zi, Pci, Tci, wi, dij, vsi, c=1,
                         eps1=1e-20, eps2=1e-8, maxiter=50,
@@ -140,17 +130,20 @@ def stability_ss_newton(P, T, zi, Pci, Tci, wi, dij, vsi, c=1,
     lnphi, Z = lnphi_Z(zi, P, T, Pci, Tci, wi, dij, vsi, c)
     Kji = init_ki(P, T, zi, Pci, Tci, wi, level, pure_ind, pure_eps)
     hi = lnphi + np.log(zi)
+    TPD_min = -eps2
+    is_stable = True
+    ki_min = None
     # for j in range(len(Kji)):
     #     ki = Kji[j]
     for j, ki in enumerate(Kji):
-        print(f'Initial guess #{j}:')
+        # print(f'Initial guess #{j}:')
         Yi = ki * zi
         yi = Yi / np.sum(Yi)
         gi = np.log(Yi) + lnphi_Z(yi, P, T, Pci, Tci, wi, dij, vsi, c)[0] - hi
         g2 = gi.dot(gi) # g2 = gnorm * gnorm
         k = 0
-        print(f'\tmethod =     SS, {k = }, {g2 = :.2e}, lnki = {np.log(ki)}')
-        while g2 > eps1 and c < maxiter:
+        # print(f'\tmethod =     SS, {k = }, {g2 = :.2e}, lnki = {np.log(ki)}')
+        while g2 > eps1 and k < maxiter:
             ki = ki * np.exp(-gi)
             Yi = ki * zi
             yi = Yi / np.sum(Yi)
@@ -158,23 +151,19 @@ def stability_ss_newton(P, T, zi, Pci, Tci, wi, dij, vsi, c=1,
             gi = np.log(Yi) + lnphi_Z(yi, P, T, Pci, Tci, wi, dij, vsi, c)[0] - hi
             g2 = gi.dot(gi)
             if g2 / g2m1 > eps_r and g2 < eps_u and g2 > eps_l:
-                print(f'\tmethod =     SS, {k = }, {g2 = :.2e}, lnki = {np.log(ki)}')
-                is_stable, kji, Z = stability_newton_after_ss(P, T, zi, ki, Z, hi, Pci, Tci, wi, dij, vsi, c)
+                # print(f'\tmethod =     SS, {k = }, {g2 = :.2e}, lnki = {np.log(ki)}')
+                g2, Yi, kji, Z = stability_newton_after_ss(P, T, zi, ki, Z, hi, Pci, Tci, wi, dij, vsi, k, c)
+                ki = kji[0]
                 break
             else:
-                print(f'\tmethod =     SS, {k = }, {g2 = :.2e}, lnki = {np.log(ki)}')
+                # print(f'\tmethod =     SS, {k = }, {g2 = :.2e}, lnki = {np.log(ki)}')
                 k += 1
         TPD = - np.log(np.sum(Yi))
-        # print(f'For the initial guess #{j}:\n'
-        #       f'\ttolerance of equations: {gnorm}\n'
-        #       f'\tnumber of iterations: {k+1}\n'
-        #       f'\tTPD: {TPD}\n'
-        #       f'\t{ki = }')
-        if g2 < eps1 and TPD < -eps2:
+        if g2 < eps1 and TPD < TPD_min:
             is_stable = False
-            break
-    else:
-        is_stable = True
+            ki_min = ki
+            TPD_min = TPD
+
     # print(f'The one phase state is stable: {is_stable}')
-    kvi = yi / zi
-    return is_stable, (kvi, 1 / kvi), Z
+
+    return is_stable, (ki_min,), Z
