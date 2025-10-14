@@ -24,7 +24,7 @@ def bounds_Psat(T, zi, Pci, Tci, wi, dij, vsi, c=1, upper=True, Pmin=1e3, Pmax=1
         Pmax = P
         # if Pmin < 0:
         #     Pmin = 1e-4
-    print(Pmin, Pmax)
+    # print(Pmin, Pmax)
     return Pmin, Pmax, kji[0]
 
 np.set_printoptions(linewidth=np.inf)
@@ -40,7 +40,7 @@ def ki_Psat_ss(Pmin, Pmax, T, ki, zi, Pci, Tci, wi, dij, vsi, c=1, upper=True, e
     gi = np.log(ki) + lnphiyi - lnphizi
     gnorm = np.linalg.norm(gi)
     k = 0
-    print(k, Psat / 1e6, gnorm, TPD)
+    # print(k, Psat / 1e6, gnorm, TPD)
     while (gnorm > eps_ki or np.abs(TPD) > eps_Psat) and k < maxiter_ki:
         ki = ki * np.exp(-gi)
         Yi = zi * ki
@@ -49,7 +49,7 @@ def ki_Psat_ss(Pmin, Pmax, T, ki, zi, Pci, Tci, wi, dij, vsi, c=1, upper=True, e
         gi = np.log(ki) + lnphiyi - lnphizi
         gnorm = np.linalg.norm(gi)
         k += 1
-        print(k, Psat / 1e6, gnorm, TPD)
+        # print(k, Psat / 1e6, gnorm, TPD)
     if gnorm < eps_ki and np.abs(TPD) < eps_Psat:
         rhoy = yi.dot(mwi) / Zy
         rhoz = zi.dot(mwi) / Zz
@@ -123,7 +123,7 @@ def Psat_ss(T, zi, Pci, Tci, wi, dij, vsi, c=1, upper=True, Pmin=1e3, Pmax=1e8, 
     Psat, yj, ki, Zj = ki_Psat_ss(Pmin, Pmax, T, ki, zi, Pci, Tci, wi, dij, vsi, c, upper, eps_ki, maxiter_ki, eps_Psat, maxiter_Psat)
     return Psat, ki, yj, Zj
 
-def Psat_newton(T, zi, Pci, Tci, wi, dij, vsi, c=1, upper=True, Pmin=1e3, Pmax=1e8, N_nodes=100, eps1=1e-10, eps2=1e-8, maxiter=50, level=0, pure_ind=0, pure_eps=1e-3,
+def Psat_newton(T, zi, Pci, Tci, wi, mwi, dij, vsi, c=1, upper=True, Pmin=1e3, Pmax=1e8, N_nodes=100, eps1=1e-10, eps2=1e-8, maxiter=50, level=0, pure_ind=0, pure_eps=1e-3,
                 eps_newton=1e-8, maxiter_newton=250):
     Pmin, Pmax, ki = bounds_Psat(T, zi, Pci, Tci, wi, dij, vsi, c, upper, Pmin, Pmax, N_nodes, eps1, eps2, maxiter, level, pure_ind, pure_eps)
     Yi = zi * ki
@@ -135,7 +135,7 @@ def Psat_newton(T, zi, Pci, Tci, wi, dij, vsi, c=1, upper=True, Pmin=1e3, Pmax=1
     else:
         Psat = Pmax
     Psat, lnphiyi, lnphizi, dlnphiiyidP, dlnphiizidP, Zy, Zz, TPD = Psat_newton_in_newton(Psat, Pmin, Pmax, T, ki, zi, yi, Pci, Tci, wi, dij, vsi, c, upper, eps_newton, maxiter_newton)
-    print(Psat)
+    # print(Psat)
     dlnphiydnk = lnphii_dnj(yi, n, Psat, T, Pci, Tci, wi, dij, vsi, c)[1]
     Nc = yi.shape[0]
     gi = np.empty(Nc + 1)
@@ -162,12 +162,11 @@ def Psat_newton(T, zi, Pci, Tci, wi, dij, vsi, c=1, upper=True, Pmin=1e3, Pmax=1
         X = -np.linalg.solve(J, gi)
         ki = ki * np.exp(X[:-1])
         Psat = Psat * np.exp(X[-1])
-        print(f'{k = }')
-        print(f'{ki = }')
-        print(f'{Psat = }')
-        print(f'{gnorm = }')
-        print(f'{TPD = }')
-        # quit()
+        # print(f'{k = }')
+        # print(f'{ki = }')
+        # print(f'{Psat = }')
+        # print(f'{gnorm = }')
+        # print(f'{TPD = }')
         Yi = zi * ki
         n = np.sum(Yi)
         yi = Yi / n
@@ -183,9 +182,9 @@ def Psat_newton(T, zi, Pci, Tci, wi, dij, vsi, c=1, upper=True, Pmin=1e3, Pmax=1
         rhoy = yi.dot(mwi) / Zy
         rhoz = zi.dot(mwi) / Zz
         if rhoy < rhoz:
-            return Psat, np.vstack([yi, zi]), ki, np.array([Zy, Zz])
+            return Psat, np.vstack([yi, zi]), ki, np.array([Zy, Zz]), np.array([0., 1.])
         else:
-            return Psat, np.vstack([zi, yi]), ki, np.array([Zz, Zy])
+            return Psat, np.vstack([zi, yi]), ki, np.array([Zz, Zy]), np.array([1., 0.])
     raise ValueError('Solution Psat not found')
         # print(Psat)
 
@@ -212,20 +211,20 @@ def Psat_newton(T, zi, Pci, Tci, wi, dij, vsi, c=1, upper=True, Pmin=1e3, Pmax=1
 
 #Test 01
 # P = 1e6
-T = 68. + 273.15
-zi = np.array([0.7167, 0.0895, 0.0917, 0.0448, 0.0573])
-Pci = np.array([45.99, 48.72, 42.48, 37.96, 23.975]) * 1e5
-Tci = np.array([190.56, 305.32, 369.83, 425.12, 551.022])
-mwi = np.array([16.043, 30.07, 44.097, 58.123, 120.0]) / 1e3
-wi = np.array([0.012, 0.1, 0.152, 0.2, 0.414])
-vsi = np.array([-0.1017, -0.0766, -0.0499, -0.0219, 0.0909])
-dij = np.array([
-  [0.0000,  0.0027, 0.0085, 0.0147, 0.0393],
-  [0.0027, 0.0000, 0.0017, 0.0049, 0.0219],
-  [0.0085, 0.0017, 0.0000, 0.0009, 0.0117],
-  [0.0147, 0.0049, 0.0009, 0.0000, 0.0062],
-  [0.0393, 0.0219, 0.0117, 0.0062, 0.0000]
-])
+# T = 68. + 273.15
+# zi = np.array([0.7167, 0.0895, 0.0917, 0.0448, 0.0573])
+# Pci = np.array([45.99, 48.72, 42.48, 37.96, 23.975]) * 1e5
+# Tci = np.array([190.56, 305.32, 369.83, 425.12, 551.022])
+# mwi = np.array([16.043, 30.07, 44.097, 58.123, 120.0]) / 1e3
+# wi = np.array([0.012, 0.1, 0.152, 0.2, 0.414])
+# vsi = np.array([-0.1017, -0.0766, -0.0499, -0.0219, 0.0909])
+# dij = np.array([
+#   [0.0000,  0.0027, 0.0085, 0.0147, 0.0393],
+#   [0.0027, 0.0000, 0.0017, 0.0049, 0.0219],
+#   [0.0085, 0.0017, 0.0000, 0.0009, 0.0117],
+#   [0.0147, 0.0049, 0.0009, 0.0000, 0.0062],
+#   [0.0393, 0.0219, 0.0117, 0.0062, 0.0000]
+# ])
 
 # Test 02
 # P = 15e6
@@ -302,31 +301,29 @@ dij = np.array([
 #  [ 0.0063 ,  0.19705,  0.13549,  0.08406,  0.05104,  0.02627, -0.01284, -0.01087,  0.     ]
 # ])
 
-T = 92.2 + 273.15
-zi = np.array([0.0001, 0.4227, 0.1166, 0.1006, 0.0266, 0.1909, 0.1025, 0.0400])
-yi = np.array([1., 0., 0., 0., 0., 0., 0., 0.])
-fj = np.array([0., 0.1, 0.18, 0.31, 0.5, 0.7])
-Pci = np.array([72.8, 45.31, 52.85, 39.81, 33.35, 27.27, 17.63, 10.34]) * 101325.
-Tci = np.array([304.2, 190.1, 305.1, 391.3, 465.4, 594.5, 739.7, 886.2])
-wi = np.array([0.225, 0.0082, 0.13, 0.1666, 0.2401, 0.3708, 0.6151, 1.0501])
-vsi = np.array([0., 0., 0., 0., 0., 0., 0., 0.])
-mwi = np.array([44.01, 16.136, 33.585, 49.87, 72.151, 123.16, 225.88, 515.65]) / 1e3
-dij = np.array([
-[0.    , 0.103   , 0.13    ,0.135   ,0.125   ,0.15    ,0.15    ,0.103  ],
- [0.103,  0.     ,  0.00153, 0.01114, 0.02076, 0.03847, 0.0704 , 0.108  ],
- [0.13 ,  0.00153,  0.     , 0.00446, 0.01118, 0.02512, 0.05245, 0.0864 ],
- [0.135,  0.01114,  0.00446, 0.     , 0.00154, 0.00862, 0.02728, 0.05402],
- [0.125,  0.02076,  0.01118, 0.00154, 0.     , 0.0029 , 0.0161 , 0.03812],
- [0.15 ,  0.03847,  0.02512, 0.00862, 0.0029 , 0.     , 0.00542, 0.02049],
- [0.15 ,  0.0704 ,  0.05245, 0.02728, 0.0161 , 0.00542, 0.     , 0.00495],
- [0.103,  0.108  ,  0.0864 , 0.05402, 0.03812, 0.02049, 0.00495, 0.     ]
- ])
+# T = 92.2 + 273.15
+# zi = np.array([0.0001, 0.4227, 0.1166, 0.1006, 0.0266, 0.1909, 0.1025, 0.0400])
+# yi = np.array([1., 0., 0., 0., 0., 0., 0., 0.])
+# fj = np.array([0., 0.1, 0.18, 0.31, 0.5, 0.7])
+# Pci = np.array([72.8, 45.31, 52.85, 39.81, 33.35, 27.27, 17.63, 10.34]) * 101325.
+# Tci = np.array([304.2, 190.1, 305.1, 391.3, 465.4, 594.5, 739.7, 886.2])
+# wi = np.array([0.225, 0.0082, 0.13, 0.1666, 0.2401, 0.3708, 0.6151, 1.0501])
+# vsi = np.array([0., 0., 0., 0., 0., 0., 0., 0.])
+# mwi = np.array([44.01, 16.136, 33.585, 49.87, 72.151, 123.16, 225.88, 515.65]) / 1e3
+# dij = np.array([
+# [0.    , 0.103   , 0.13    ,0.135   ,0.125   ,0.15    ,0.15    ,0.103  ],
+#  [0.103,  0.     ,  0.00153, 0.01114, 0.02076, 0.03847, 0.0704 , 0.108  ],
+#  [0.13 ,  0.00153,  0.     , 0.00446, 0.01118, 0.02512, 0.05245, 0.0864 ],
+#  [0.135,  0.01114,  0.00446, 0.     , 0.00154, 0.00862, 0.02728, 0.05402],
+#  [0.125,  0.02076,  0.01118, 0.00154, 0.     , 0.0029 , 0.0161 , 0.03812],
+#  [0.15 ,  0.03847,  0.02512, 0.00862, 0.0029 , 0.     , 0.00542, 0.02049],
+#  [0.15 ,  0.0704 ,  0.05245, 0.02728, 0.0161 , 0.00542, 0.     , 0.00495],
+#  [0.103,  0.108  ,  0.0864 , 0.05402, 0.03812, 0.02049, 0.00495, 0.     ]
+#  ])
 
-for i, f in enumerate(fj):
-  xi = (1. - f) * zi + f * yi
-  print(f)
+# for i, f in enumerate(fj):
+#   xi = (1. - f) * zi + f * yi
+#   print(f)
 
 # print(Psat_ss(T, zi, Pci, Tci, wi, dij, vsi, c=1, upper=True, N_nodes=20))
-  print(Psat_newton(T, xi, Pci, Tci, wi, dij, vsi, c=1, upper=True))
-import sys
-print("Current Python folder:", sys.prefix)
+  # print(Psat_newton(T, xi, Pci, Tci, wi, dij, vsi, c=1, upper=True))
