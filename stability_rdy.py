@@ -57,7 +57,7 @@ def stability_newton(P, T, zi, Pci, Tci, wi, dij, vsi, c=1, eps1=1e-10, eps2=1e-
         is_stable = True
     # print(f'The one phase state is stable: {is_stable}')
     kvi = yi / zi
-    return is_stable, (kvi, 1 / kvi), Z
+    return is_stable, (kvi,), Z
 
 def stability_succesive_substitution(P, T, zi, Pci, Tci, wi, dij, vsi, c=1, eps1=1e-10, eps2=1e-8, maxiter=500, level=0, pure_ind=0, pure_eps=1e-3):
     lnphi, Z = lnphi_Z(zi, P, T, Pci, Tci, wi, dij, vsi, c)
@@ -91,7 +91,7 @@ def stability_succesive_substitution(P, T, zi, Pci, Tci, wi, dij, vsi, c=1, eps1
         is_stable = True
     # print(f'The one phase state is stable: {is_stable}')
     kvi = yi / zi
-    return is_stable, (kvi, 1/kvi), Z
+    return is_stable, (kvi,), Z
 
 def stability_newton_after_ss(P, T, zi, ki, Z, hi, Pci, Tci, wi, dij, vsi, k, c=1, eps1=1e-20, eps2=1e-8, maxiter=50):
     # lnphi, Z = lnphi_Z(zi, P, T, Pci, Tci, wi, dij, vsi, c)
